@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,11 +20,20 @@ import com.productms.app.model.AddProductRequest;
 import com.productms.app.model.AllProductsResponse;
 import com.productms.app.model.CommonResponse;
 import com.productms.app.model.DeleteMultipleRequest;
+import com.productms.app.model.FindByPriceRangeRequest;
 import com.productms.app.model.Product;
+import com.productms.app.service.ProductService;
+import com.productms.app.service.StubDataFeederService;
 
 @RestController
 @RequestMapping(value = "/product")
 public class ProductMSController {
+	
+	@Autowired
+	StubDataFeederService stubDataFeederService;
+	
+	@Autowired
+	ProductService productService;
 	
 	private static final Logger logger = LoggerFactory.getLogger(ProductMSController.class);
 	
@@ -56,13 +66,8 @@ public class ProductMSController {
 		 }
 		 
 		 response.setZipCode(zipCode);
-		 List<Product> productList = new ArrayList<>();
-		 Product product = new Product();
-		 product.setCost(10.0);
-		 product.setProductDescription("Product Description 1");
-		 product.setProductId(0001);
-		 product.setProductName("Product Name 1");
-		productList.add(product );
+		 List<Product> allProductList = stubDataFeederService.getProductList();
+		 List<Product> productList = productService.filterByZip();
 		if(!CollectionUtils.isEmpty(productList)) {
 			response.setStatus("SUCCESS");
 			response.setProductList(productList );
@@ -75,6 +80,26 @@ public class ProductMSController {
 		
 		 
 	 }
+	 
+	//{{url}}/product/findByPriceRange
+		 @RequestMapping(value="/findByPriceRange", method = RequestMethod.POST)
+		 public ResponseEntity<CommonResponse> findByPriceRange(@RequestBody FindByPriceRangeRequest request){
+			 CommonResponse response = new CommonResponse();
+			 //Validate the request
+			 
+			 if(null==request || (request.getMaxValue() == 0.0 && request.getMinValue() ==0.0)) {
+				 response.setErrorCode("E101");
+				 response.setErrorDescription("Request is not valid. Please provide correct price range");
+				 response.setStatus("Failure");
+				 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+			 } else {
+				 response.setStatus("SUCCESS");
+				 return new ResponseEntity<>(response, HttpStatus.OK);
+			 }
+			 
+		 }
+	 
+	 
 	 
 	 //{{url}}/product/add
 	 @RequestMapping(value="/add", method = RequestMethod.POST)

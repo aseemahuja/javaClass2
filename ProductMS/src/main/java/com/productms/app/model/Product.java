@@ -7,6 +7,13 @@ public class Product {
 	String productName;
 	String productDescription;
 	String imagePath;
+	int zipCode;
+	public int getZipCode() {
+		return zipCode;
+	}
+	public void setZipCode(int zipCode) {
+		this.zipCode = zipCode;
+	}
 	public int getProductId() {
 		return productId;
 	}
