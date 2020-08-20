@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.productms.app.exception.ServiceException;
 import com.productms.app.model.AddProductRequest;
 import com.productms.app.model.AllProductsResponse;
 import com.productms.app.model.CommonResponse;
@@ -59,15 +61,17 @@ public class ProductMSController {
 	 allProductsbyZip(@PathVariable(value="zipCode") int zipCode) { 
 		 AllProductsResponse response = new AllProductsResponse();
 		 if(zipCode ==0) {
-			 response.setStatus("Failure");
-			 response.setErrorCode("E001");
-			 response.setErrorDescription("ZipCode is invalid");
-			 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+			 throw new ServiceException("ZIPCODE_NOT_VALID");
+			/*
+			 * response.setStatus("Failure"); response.setErrorCode("E001");
+			 * response.setErrorDescription("ZipCode is invalid"); return new
+			 * ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+			 */
 		 }
 		 
 		 response.setZipCode(zipCode);
 		 List<Product> allProductList = stubDataFeederService.getProductList();
-		 List<Product> productList = productService.filterByZip();
+		 List<Product> productList = productService.filterByZip(zipCode, allProductList);
 		if(!CollectionUtils.isEmpty(productList)) {
 			response.setStatus("SUCCESS");
 			response.setProductList(productList );
