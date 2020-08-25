@@ -1,6 +1,5 @@
 package com.productms.app.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,8 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,25 +14,24 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.productms.app.exception.ServiceException;
 import com.productms.app.model.AddProductRequest;
 import com.productms.app.model.AllProductsResponse;
 import com.productms.app.model.CommonResponse;
 import com.productms.app.model.DeleteMultipleRequest;
 import com.productms.app.model.FindByPriceRangeRequest;
 import com.productms.app.model.Product;
+import com.productms.app.requestValidator.ProductMSRequestValidator;
 import com.productms.app.service.ProductService;
-import com.productms.app.service.StubDataFeederService;
 
 @RestController
 @RequestMapping(value = "/product")
 public class ProductMSController {
 	
 	@Autowired
-	StubDataFeederService stubDataFeederService;
+	ProductService productService;
 	
 	@Autowired
-	ProductService productService;
+	ProductMSRequestValidator validator;
 	
 	private static final Logger logger = LoggerFactory.getLogger(ProductMSController.class);
 	
@@ -59,30 +55,17 @@ public class ProductMSController {
 	 @RequestMapping(value = "/all/{zipCode}", method = RequestMethod.GET)
 	 public ResponseEntity<AllProductsResponse>
 	 allProductsbyZip(@PathVariable(value="zipCode") int zipCode) { 
-		 AllProductsResponse response = new AllProductsResponse();
-		 if(zipCode ==0) {
-			 throw new ServiceException("ZIPCODE_NOT_VALID");
-			/*
-			 * response.setStatus("Failure"); response.setErrorCode("E001");
-			 * response.setErrorDescription("ZipCode is invalid"); return new
-			 * ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-			 */
-		 }
 		 
-		 response.setZipCode(zipCode);
-		 List<Product> allProductList = stubDataFeederService.getProductList();
-		 List<Product> productList = productService.filterByZip(zipCode, allProductList);
-		if(!CollectionUtils.isEmpty(productList)) {
-			response.setStatus("SUCCESS");
-			response.setProductList(productList );
-			response.setNumberOfProducts(productList.size());
-			return new ResponseEntity<>(response, HttpStatus.OK);
-		} else {
-			return new ResponseEntity<>(response, HttpStatus.NO_CONTENT);
-		}
-		
-		
+		validator.validateAllByZip(zipCode);
 		 
+		List<Product> productList = productService.filterByZip(zipCode);
+		
+		AllProductsResponse response = new AllProductsResponse();
+		response.setZipCode(zipCode);
+		response.setStatus("SUCCESS");
+		response.setProductList(productList );
+		response.setNumberOfProducts(productList.size());
+		return new ResponseEntity<>(response, HttpStatus.OK);
 	 }
 	 
 	//{{url}}/product/findByPriceRange
@@ -110,16 +93,10 @@ public class ProductMSController {
 	 public ResponseEntity<CommonResponse> addProduct(@RequestBody AddProductRequest request){
 		 CommonResponse response = new CommonResponse();
 		 //Validate the request
+		 validator.validateAdd(request);
 		 
-		 if(null==request || null==request.getProductList() || CollectionUtils.isEmpty(request.getProductList())) {
-			 response.setErrorCode("E101");
-			 response.setErrorDescription("Request is not valid.");
-			 response.setStatus("Failure");
-			 return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-		 } else {
-			 response.setStatus("SUCCESS");
-			 return new ResponseEntity<>(response, HttpStatus.OK);
-		 }
+		 response.setStatus("SUCCESS");
+		 return new ResponseEntity<>(response, HttpStatus.OK);
 		 
 	 }
 	 
