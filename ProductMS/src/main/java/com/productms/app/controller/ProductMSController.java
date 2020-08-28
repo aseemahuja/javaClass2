@@ -95,6 +95,8 @@ public class ProductMSController {
 		 //Validate the request
 		 validator.validateAdd(request);
 		 
+		 productService.addProduct(request.getProductList());
+		 
 		 response.setStatus("SUCCESS");
 		 return new ResponseEntity<>(response, HttpStatus.OK);
 		 
